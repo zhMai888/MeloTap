@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeloTap</title>
+    <style>
+        /* 基础样式 */
+        #background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+        #button1, #button2 {
+            color: #383838;
+            background-color: rgba(0, 0, 0, 0);
+            font-size: 7vh;
+            border: none;
+            position: absolute;
+            z-index: 1;
+        }
+        #button1:hover, #button2:hover {
+            cursor: pointer;
+        }
+        #button1 {
+            top: 46vh;
+            left: 8vw;
+            width: 25vw;
+            height: 10vh;
+        }
+        #button2 {
+            top: 63vh;
+            left: 11vw;
+            width: 20vw;
+            height: 10vh;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 8px;
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .music-bars {
+            margin-top: 20px;
+        }
+        .music-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .play-sound, .record-sound {
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .play-sound {
+            background-color: #4caf50;
+            color: white;
+        }
+        .record-sound {
+            background-color: #f44336;
+            color: white;
+        }
+
+        /* 音乐条动画 */
+        .visualizer {
+            display: flex;
+            gap: 2px;
+            width: 100px;
+            height: 20px;
+            align-items: flex-end;
+        }
+        .visualizer div {
+            width: 8px;
+            height: 5px;
+            background-color: #4caf50;
+            animation: none;
+        }
+        .visualizer.playing div {
+            animation: bounce 0.6s infinite ease-in-out;
+        }
+        .visualizer div:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        .visualizer div:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        .visualizer div:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+        .visualizer div:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                height: 5px;
+            }
+            50% {
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div><img src="./background.jpg" alt="" id="background"></div>
+    <button id="button1">开始</button>
+    <button id="button2">设置</button>
+
+    <!-- 模态框 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>音乐条设置</h2>
+            <div class="music-bars">
+                <!-- 音乐条模拟 -->
+                <div class="music-bar" id="bar1">
+                    <span>背景乐 </span>
+                    <div class="visualizer" id="visualizer1">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer1" data-sound="sound1" data-music="music/music.mp3">播放</button>
+                    <button class="record-sound" data-bar="visualizer1" data-sound="sound1">录音</button>
+                </div>
+                <div class="music-bar" id="bar2">
+                    <span>音乐 1</span>
+                    <div class="visualizer" id="visualizer2">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer2" data-sound="sound2" data-music="music/1.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer2" data-sound="sound2">录音</button>
+                </div>
+                <div class="music-bar" id="bar3">
+                    <span>音乐 2</span>
+                    <div class="visualizer" id="visualizer3">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer3" data-sound="sound3" data-music="music/2.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer3" data-sound="sound3">录音</button>
+                </div>
+                <div class="music-bar" id="bar4">
+                    <span>音乐 3</span>
+                    <div class="visualizer" id="visualizer4">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer4" data-sound="sound4" data-music="music/3.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer4" data-sound="sound4">录音</button>
+                </div>
+                <div class="music-bar" id="bar5">
+                    <span>音乐 4</span>
+                    <div class="visualizer" id="visualizer5">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer5" data-sound="sound5" data-music="music/4.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer5" data-sound="sound5">录音</button>
+                </div>
+                <div class="music-bar" id="bar6">
+                    <span>音乐 5 </span>
+                    <div class="visualizer" id="visualizer6">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer6" data-sound="sound6" data-music="music/5.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer6" data-sound="sound6">录音</button>
+                </div>
+                <div class="music-bar" id="bar7">
+                    <span>音乐 6</span>
+                    <div class="visualizer" id="visualizer7">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer7" data-sound="sound7" data-music="music/6.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer7" data-sound="sound7">录音</button>
+                </div>
+                <div class="music-bar" id="bar8">
+                    <span>音乐 7</span>
+                    <div class="visualizer" id="visualizer8">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer8" data-sound="sound8" data-music="music/7.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer8" data-sound="sound8">录音</button>
+                </div>
+                <div class="music-bar" id="bar9">
+                    <span>音乐 8</span>
+                    <div class="visualizer" id="visualizer9">
+                        <div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <button class="play-sound" data-bar="visualizer9" data-sound="sound9" data-music="music/8.mp4">播放</button>
+                    <button class="record-sound" data-bar="visualizer9" data-sound="sound9">录音</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('settingsModal');
+        const closeModal = document.querySelector('.close');
+
+
+        // 点击 "开始" 按钮时跳转到main.html
+        document.getElementById('button1').addEventListener('click', function () {
+            window.location.href = 'main.html';
+        });
+
+        // 点击 "设置" 按钮时显示模态框
+        document.getElementById('button2').addEventListener('click', function () {
+            modal.style.display = 'block';
+        });
+
+        // 点击关闭按钮时隐藏模态框
+        closeModal.addEventListener('click', function () {
+            modal.style.display = 'none';
+            // 关闭时重置所有音乐条动画以及音频
+            document.querySelectorAll('.visualizer.playing').forEach(v => v.classList.remove('playing'));
+            // 如果音频播放器存在，则暂停并重置
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
+        });
+
+        let audioPlayer;
+
+        // 模拟播放声音并触发音乐条动画
+        document.querySelectorAll('.play-sound').forEach(button => {
+            button.addEventListener('click', function () {
+                const barId = this.getAttribute('data-bar');
+                const musicPath = this.getAttribute('data-music');
+                const visualizer = document.getElementById(barId);
+
+                // 如果已有音频正在播放，先释放它
+                if (audioPlayer) {
+                    audioPlayer.pause();
+                    audioPlayer.currentTime = 0;
+                    audioPlayer = null;
+                    // 让所有音乐条停止动画
+                    document.querySelectorAll('.visualizer.playing').forEach(v => v.classList.remove('playing'));
+                }
+
+                audioPlayer = new Audio(musicPath);
+
+                if (this !== document.querySelectorAll('.play-sound')[0]) {
+                    // 播放音频
+                    audioPlayer.volume = 0.1;
+                }
+                audioPlayer.play();
+                visualizer.classList.add('playing');
+
+                // 音乐播放结束时停止动画
+                audioPlayer.addEventListener('ended', function () {
+                    visualizer.classList.remove('playing');
+                });
+            });
+        });
+
+        // 录音模拟效果
+        document.querySelectorAll('.record-sound').forEach(button => {
+            button.addEventListener('click', function () {
+                const barId = this.getAttribute('data-bar');
+                const visualizer = document.getElementById(barId);
+                if (visualizer.classList.contains('playing')) {
+                    visualizer.classList.remove('playing');
+                    this.textContent = '录音';
+                } else {
+                    document.querySelectorAll('.visualizer.playing').forEach(v => v.classList.remove('playing'));
+                    visualizer.classList.add('playing');
+                    this.textContent = '停止';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
