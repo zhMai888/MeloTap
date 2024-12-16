@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeloTap</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/two.js/0.7.10/two.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw; 
+      height: 100vh;
+      z-index: 1; /* 背景层 */
+    }
+    .grid {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr); /* 8列 */
+      grid-template-rows: repeat(4, 1fr); /* 4行 */
+      width: 100vw; /* 宽度覆盖整个视口 */
+      height: 100vh; /* 高度覆盖整个视口 */
+      z-index: 2; /* 按钮层 */
+    }
+    .grid div {
+      background-color: rgba(255, 255, 255, 0);
+      border: 1px solid rgba(255, 255, 255, 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.4s ease-out;
+    }
+
+    .grid div:active {
+      background-color: rgba(255, 255, 255, 0.2);
+      transition: none;
+    }
+    #background1, #background2 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: transform 1s ease;
+      z-index: -1;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="background1"></div>
+  <div id="background2"></div>
+  <div id="canvas"></div>
+  <div class="grid" id="grid"></div>
+  <!-- 背景音乐 -->
+  <audio id="music" src="./music/music.mp3" autoplay loop></audio>
+
+  <script>
+    // 设置 Two.js
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const gridSize = 8; // 网格尺寸
+    const elem = document.getElementById('canvas');
+    const params = { width: width, height: height, type: Two.Types.svg };
+    const two = new Two(params).appendTo(elem);
+    // 创建动画
+    var cx = two.width * 0.5; // 中心位置
+    var cy = two.height * 0.5;
+
+    // 颜色数组
+    const colors = ['#ec5685', '#d49e9e','#008899', '#594f57', '#444444'];
+    const backgroundColors = ["#97cacb","#302b2d","#499dae","#e84f78","#9cd7e9","#cca09f","#f0d5ca"];
+
+    // 随机选择颜色
+    function getRandomColor() {
+      const randomIndex = Math.floor(Math.random() * colors.length);
+      return colors[randomIndex];
+    }
+
+    let activeBackground = 1;
+    let clickCount = 0;
+    let randomClickCount = Math.floor(Math.random() * 15) + 5;
+
+    // 将RGB颜色转换为HEX格式
+    function rgbToHex(rgb) {
+      const result = rgb.match(/\d+/g);
+      if (result) {
+        const r = parseInt(result[0]).toString(16).padStart(2, '0');
+        const g = parseInt(result[1]).toString(16).padStart(2, '0');
+        const b = parseInt(result[2]).toString(16).padStart(2, '0');
+        return `#${r}${g}${b}`;
+      }
+      return rgb; // 如果不是RGB格式，直接返回
+    }
+
+    // Update background on every 20th click
+    const gridContainer = document.getElementById('grid');
+    gridContainer.addEventListener('click', function () {
+      clickCount++;
+      // console.log("clickCount:", clickCount);
+      
+      if (clickCount >= randomClickCount) {
+        const directions = ['translateX(100%)', 'translateX(-100%)', 'translateY(100%)', 'translateY(-100%)'];
+        const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+        const currentBackground = document.getElementById(`background${activeBackground}`);
+        const nextBackground = document.getElementById(`background${activeBackground === 1 ? 2 : 1}`);
+
+        // 获取当前背景颜色并转换为HEX格式
+        const nowColor = rgbToHex(currentBackground.style.backgroundColor);
+
+        // 从颜色数组中排除当前背景颜色
+        const availableColors = backgroundColors.filter(color => color !== nowColor);
+        
+        const randomIndex = Math.floor(Math.random() * availableColors.length);
+        nextBackground.style.backgroundColor = availableColors[randomIndex];
+        nextBackground.style.transform = `translateX(0) translateY(0)`;
+        currentBackground.style.transform = randomDirection;
+
+        activeBackground = activeBackground === 1 ? 2 : 1;
+        clickCount = 0; // Reset the counter
+        randomClickCount = Math.floor(Math.random() * 15) + 5; 
+        // console.log("New randomClickCount:", randomClickCount);
+      }
+    });
+
+    // 初始化背景颜色
+    document.getElementById('background1').style.backgroundColor = '#97cacb';
+
+    // 创建背景动画层
+    const backgroundLayer = two.makeGroup();
+    backgroundLayer.translation.set(width / 2, height / 2); // 动画层居中
+
+    // 定义动效
+    const effects = [
+      createRotatingX,
+      createRotatingCircle,
+      createRandomPolygon,
+      createBubbleEffect,
+      createExplodingStars,
+      createColorfulSquareEffect,
+      createPulseEffect
+    ];
+
+    // 随机打乱数组
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // 生成音频文件的路径数组
+    const totalButtons = 32;
+    const audioFiles = [];
+    for (let i = 1; i <= totalButtons; i++) {
+      audioFiles.push(`./music/${i}.mp4`);
+    }
+
+    // 创建按钮
+    for (let row = 0; row < gridSize; row++) {
+      let shuffledEffects = shuffle([...effects]);
+      for (let col = 0; col < gridSize; col++) {
+        const gridCell = document.createElement('div');
+        gridCell.setAttribute('data-row', row);
+        gridCell.setAttribute('data-col', col);
+
+        // Bind random effect to each button
+        const effect = shuffledEffects[col % effects.length];
+        gridCell.addEventListener('click', function () {
+          effect();
+        });
+
+        gridContainer.appendChild(gridCell);
+      }
+    }
+
+    // 绑定按钮与音频
+    const buttons = document.querySelectorAll('.grid div');
+    buttons.forEach((button, index) => {
+      button.addEventListener('click', () => {
+        const audio = new Audio(audioFiles[index]); // 为每个按钮创建新的音频对象
+        audio.volume = 0.1;
+        audio.play(); // 播放音效
+      });
+    });
+
+    // 自动播放音乐的逻辑
+    const musicElement = document.getElementById('music');
+    document.getElementById('grid').addEventListener('click', playMusicOnce); // 确保音乐只在第一次点击后播放一次
+
+
+
+    function playMusicOnce() {
+      musicElement.play();
+      this.removeEventListener('click', playMusicOnce); // 确保音乐只在第一次点击后播放一次
+    }
+
+
+    // 动效 1: 旋转的 X（✔）
+    function createRotatingX() {
+      const size = 300; // X 的大小
+      const squareSizeWidth = width / 2; // 正方形边长的一半
+      const squareSizeHeight = height / 2; // 正方形边长的一半
+
+      // 随机生成 X 的中心位置，确保它完全位于正方形内
+      const randomX = Math.random() * (squareSizeWidth - size) * 2 - (squareSizeWidth - size);
+      const randomY = Math.random() * (squareSizeHeight - size) * 2 - (squareSizeHeight - size);
+
+      // 创建 X 的两条线
+      const x1 = two.makeLine(-size / 2, -size / 2, size / 2, size / 2);
+      const x2 = two.makeLine(-size / 2, size / 2, size / 2, -size / 2);
+
+      x1.linewidth = 18;
+      x2.linewidth = 18;
+      const color = getRandomColor();
+      x1.stroke = color;
+      x2.stroke = color;
+
+
+      // 创建一个组，将两条线添加到组中
+      const group = two.makeGroup(x1, x2);
+      group.translation.set(randomX, randomY); // 设置组的中心位置
+      group.opacity = 1; // 确保初始透明度
+      group.scale = 0.1; // 确保初始缩放比例
+
+      backgroundLayer.add(group);
+
+      // 动画参数
+      const animationState = {
+        rotation: 0,
+        scale: 0.1,
+        opacity: 1,
+      };
+
+      // 动画：旋转出现并逐渐淡出
+      new TWEEN.Tween(animationState)
+        .to({ rotation: Math.PI * 2, scale: 1, opacity: 0 }, 2000)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(() => {
+          group.rotation = animationState.rotation;
+          group.scale = animationState.scale;
+          group.opacity = animationState.opacity;
+        })
+        .onComplete(() => {
+          backgroundLayer.remove(group); // 动画完成后移除 X
+        })
+        .start();
+    }
+
+
+    // 动效 2: 旋转的圆（✔）
+    function createRotatingCircle() {
+      // 随机生成圆形的大小
+      const size = Math.random() * 400 + 200; 
+
+      const clockwise = Math.random() < 0.5;
+
+      // 创建圆形
+      const circle = two.makeCircle(0, 0, size / 2);  // 半径是 size 的一半
+      const color = getRandomColor();
+      circle.fill = color;
+      circle.stroke = 'rgba(0,0,0,0)';  // 设置透明边框
+      backgroundLayer.add(circle);
+
+      let rotationSpeed = Math.random() * 0.1 + 0.05;
+      let fillAngle = 0;  // 控制圆形填充的角度
+      let eraseAngle = 0;  // 控制擦除的角度
+      let isFilling = true;  // 标记当前是填充还是擦除
+
+      // 如果是顺时针，填充角度递增；如果是逆时针，填充角度递减
+      const angleStep = clockwise ? 0.7 : -0.7;
+      
+
+      two.bind('update', function animate() {
+        if (isFilling) {
+          // 如果是顺时针填充
+          if (clockwise) {
+            circle.beginning = -Math.PI / 2;  // 圆形起始角度是上方
+            circle.ending = -Math.PI / 2 + (Math.PI * 2 * fillAngle / 360);  // 根据角度计算终点
+            fillAngle += angleStep;  // 顺时针增加角度
+          } 
+          // 如果是逆时针填充
+          else {
+            circle.beginning = -Math.PI / 2;  // 圆形起始角度是上方
+            circle.ending = -Math.PI / 2 + (Math.PI * 2 * fillAngle / 360);  // 角度从0到-360
+            fillAngle -= angleStep;  // 逆时针减少角度
+          }
+
+          if (Math.abs(fillAngle) >= 360) {
+            // 填充完成后，切换到擦除状态
+            isFilling = false;
+          }
+        } else {
+          // 擦除的过程
+          if (clockwise) {
+            // 顺时针擦除
+            circle.ending = -Math.PI / 2 + (Math.PI * 2 * (fillAngle - eraseAngle) / 360);  // 擦除从填充过的角度开始
+            eraseAngle += angleStep;  // 顺时针增加擦除角度
+          } else {
+            // 逆时针擦除
+            circle.ending = -Math.PI / 2 + (Math.PI * 2 * (fillAngle - eraseAngle) / 360);  // 擦除从填充过的角度开始
+            eraseAngle -= angleStep;  // 逆时针增加擦除角度
+          }
+
+          if (Math.abs(eraseAngle) >= 360) {
+            // 擦除完成后，移除圆形并停止动画
+            backgroundLayer.remove(circle);
+            two.unbind('update', animate);
+          }
+        }
+
+        // 旋转
+        if (clockwise) {
+          circle.rotation += rotationSpeed;
+        } else {
+          circle.rotation -= rotationSpeed;
+        }
+      }).play();
+    }
+
+    // 动效 3: 随机多边形（✔）
+    function createRandomPolygon() { 
+      const clockwise = Math.random() < 0.5;
+      const numVertices = Math.floor(Math.random() * 6) + 3; // 随机生成3到8个顶点
+      const angleStep = (2 * Math.PI) / numVertices; // 每个顶点之间的角度间隔
+      const radius = height / 2 - 20; // 多边形的半径，稍微小于1000px的边长
+      const points = []; // 存储多边形顶点坐标
+
+      // 随机生成一个颜色
+      const color = getRandomColor();
+      const polygonColor = color;
+
+      // 计算多边形的每个顶点坐标
+      for (let i = 0; i < numVertices; i++) {
+        const angle = clockwise ? i * angleStep : -i * angleStep; 
+        const x = Math.cos(angle) * radius; // 计算x坐标
+        const y = Math.sin(angle) * radius; // 计算y坐标
+        points.push({ x, y });
+      }
+
+      // 创建连线来构建多边形
+      const lines = [];
+      let currentLineIndex = 0; // 当前绘制的线索引
+
+      function drawNextLine() {
+        if (currentLineIndex >= numVertices) {
+          setTimeout(eraseLines, 500); // 等待.5秒后开始擦除
+          return; // 如果所有线都绘制完毕，停止
+        }
+
+        const startPoint = points[currentLineIndex];
+        const endPoint = points[(currentLineIndex + 1) % numVertices]; // 循环连接最后一个点到第一个点
+
+        const line = two.makeLine(startPoint.x, startPoint.y, startPoint.x, startPoint.y); // 初始点相同
+        line.stroke = polygonColor; // 使用之前生成的随机颜色
+        line.linewidth = 8; // 设置线宽为8，可以根据需要调整
+        line.opacity = 1; // 设置初始透明度为1
+        lines.push(line);
+        backgroundLayer.add(line); // 添加到背景层
+
+        // 动画：逐步绘制每一条边
+        let progress = 0;
+        const drawSpeed = 0.03; // 控制绘制速度
+        two.bind('update', function animate() {
+          if (progress < 1) {
+            progress += drawSpeed;
+            const currentX = startPoint.x + (endPoint.x - startPoint.x) * progress;
+            const currentY = startPoint.y + (endPoint.y - startPoint.y) * progress;
+            line.vertices[1].set(currentX, currentY); // 更新线的终点
+          } else {
+            two.unbind('update', animate); // 完成后停止动画
+            currentLineIndex++;
+            drawNextLine(); // 绘制下一条线
+          }
+        }).play();
+      }
+
+      function eraseLines() {
+        lines.forEach((line, index) => {
+          let progress = 1;
+          const eraseSpeed = 0.01; // 控制擦除速度
+
+          two.bind('update', function eraseAnimate() {
+            if (progress > 0) {
+              progress -= eraseSpeed;
+              const currentX = line.vertices[1].x - (line.vertices[1].x - line.vertices[0].x) * progress;
+              const currentY = line.vertices[1].y - (line.vertices[1].y - line.vertices[0].y) * progress;
+              line.vertices[0].set(currentX, currentY); // 更新线的起点
+            } else {
+              two.unbind('update', eraseAnimate); // 完成后停止擦除动画
+            }
+          }).play();
+        });
+
+        setTimeout(() => {
+          lines.forEach(line => backgroundLayer.remove(line));
+        }, 1000);
+      }
+
+      drawNextLine(); // 开始绘制第一条线
+    }
+
+    // 动效 4: 彩色泡泡效果（✔）
+    function createBubbleEffect() {
+      // 泡泡的数量
+      const bubbleCount = 10;
+
+      // 创建泡泡并设置其属性
+      for (let i = 0; i < bubbleCount; i++) {
+        // 随机设置泡泡的起始位置，确保泡泡在全屏画布的区域内随机分布
+        const startX = Math.random() * width - width / 2;
+        const startY = Math.random() * height - height / 2;
+
+        // 随机设置泡泡的大小
+        const size = Math.random() * 30 + 20; // 泡泡大小在 20 到 50 之间
+
+        // color列表中随机设置泡泡的颜色
+        const color = getRandomColor();
+
+        // 创建泡泡
+        const bubble = two.makeCircle(startX, startY, size);
+        bubble.fill = color;
+        bubble.stroke = color; // 设置边框颜色与填充颜色相同
+        bubble.linewidth = 0;
+        bubble.opacity = 1; // 初始透明度为1
+        backgroundLayer.add(bubble);
+
+        // 设置泡泡的运动动画：泡泡随机漂浮并逐渐消失
+        const floatDuration = 1500; // 泡泡漂浮的时间（1.5秒）
+
+        // 动画：泡泡漂浮并逐渐消失
+        new TWEEN.Tween(bubble)
+          .to({ opacity: 0 }, floatDuration) // 动画目标：透明度渐隐为0
+          .easing(TWEEN.Easing.Quadratic.Out) // 缓动效果：平滑渐隐
+          .onComplete(() => {
+            backgroundLayer.remove(bubble); // 动画完成后移除泡泡
+          })
+          .start();
+      }
+    }
+
+    // 动效 5: 星星爆炸（✔）
+    function createExplodingStars() {
+      for (let i = 0; i < 15; i++) {
+        const star = two.makeCircle(0, 0, 5);
+        star.fill = getRandomColor();
+        star.linewidth = 0;
+        backgroundLayer.add(star);
+
+        const angle = Math.random() * 2 * Math.PI;
+        const speed = Math.random() * 5 + 2;
+
+        two.bind('update', function animate() {
+          star.translation.x += Math.cos(angle) * speed;
+          star.translation.y += Math.sin(angle) * speed;
+        }).play();
+
+        setTimeout(() => backgroundLayer.remove(star), 2000);
+      }
+    }
+
+    // 动效 6: 彩色正方形边框效果（✔）
+    function createColorfulSquareEffect() {
+      // 正方形的数量
+      const squareCount = 10;
+
+      // 创建正方形并设置其属性
+      for (let i = 0; i < squareCount; i++) {
+        // 随机设置正方形的起始位置，确保正方形在正方形画布的区域内随机分布
+        const startX = Math.random() * width - width / 2; 
+        const startY = Math.random() * height - height / 2; 
+
+        // 随机设置正方形的大小
+        const size = Math.random() * 50 + 30; // 正方形边长在 30 到 80 之间
+
+        // 随机设置正方形的颜色
+        const color = getRandomColor();
+
+        // 创建正方形
+        const square = two.makeRectangle(startX, startY, size, size);
+        square.noFill(); // 不填充
+        square.stroke = color; // 设置边框颜色
+        square.linewidth = 3; // 设置边框宽度
+        square.opacity = 1; // 初始透明度为1
+        backgroundLayer.add(square);
+
+        // 设置正方形的运动动画：正方形逐渐变大并逐渐消失
+        const growDuration = 1500; // 正方形生长的时间（1.5秒）
+
+        // 动画：正方形逐渐变大并透明度减小
+        new TWEEN.Tween(square)
+          .to({ scale: 2, opacity: 0 }, growDuration) // 动画目标：尺寸放大为原来的2倍，透明度渐隐为0
+          .easing(TWEEN.Easing.Quadratic.Out) // 缓动效果：平滑生长和渐隐
+          .onComplete(() => {
+            backgroundLayer.remove(square); // 动画完成后移除正方形
+          })
+          .start();
+      }
+    }
+
+    // 动效 7: 点画盘旋圆圈效果（✔）
+    function createPulseEffect() {
+      const numDots = 30; // 每个圆圈上的点数量
+      const maxRadius = height / 2; // 圆的最大半径
+      const duration = 2000; // 动画持续时间 (ms)
+      const rotationSpeed = 0.1; // 每帧旋转的速度（弧度）
+
+      const group = two.makeGroup(); // 用于存储所有点
+      backgroundLayer.add(group);
+
+      // 创建点
+      for (let i = 0; i < numDots; i++) {
+        const angle = (i / numDots) * Math.PI * 2; // 均匀分布的角度
+        const dot = two.makeCircle(0, 0, 10); // 每个点的大小
+        dot.linewidth = 0;
+        dot.fill = getRandomColor(); // 随机颜色
+        group.add(dot);
+      }
+
+      let currentRadius = 0; // 初始半径
+      let currentRotation = 0; // 初始旋转角度
+
+      // 动画更新
+      const startTime = Date.now();
+      two.bind('update', function animate() {
+        const elapsed = Date.now() - startTime;
+
+        if (elapsed > duration) {
+          // 动画结束时，移除整个圆圈组
+          backgroundLayer.remove(group);
+          two.unbind('update', animate);
+          return;
+        }
+
+        // 更新半径和旋转角度
+        currentRadius = (elapsed / duration) * maxRadius; // 半径逐渐增大
+        currentRotation += rotationSpeed; // 圆圈逐渐旋转
+
+        // 更新每个点的位置
+        group.children.forEach((dot, i) => {
+          const angle = (i / numDots) * Math.PI * 2 + currentRotation; // 点的当前角度
+          dot.translation.set(
+            Math.cos(angle) * currentRadius,
+            Math.sin(angle) * currentRadius
+          );
+          dot.opacity = 1 - elapsed / duration; // 点逐渐淡出
+        });
+      }).play();
+    }
+
+    // 动画帧更新逻辑
+    function animate() {
+      requestAnimationFrame(animate);
+      TWEEN.update(); // 更新所有 TWEEN 动画
+    }
+
+    // 启动动画循环
+    animate();
+
+    // 渲染 Two.js
+    two.update();
+  </script>
+</body>
+</html>

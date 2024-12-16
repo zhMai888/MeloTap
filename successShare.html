@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>彩带全屏爆炸</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            position: relative;
+        }
+        h1 {
+            font-size: 48px;
+            color: #4caf50;
+            z-index: 10;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background-color: transparent;
+            opacity: 0;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>恭喜！共享成功 🎉</h1>
+
+    <script>
+        const colors = ['#ec5685', '#d49e9e', '#008899', '#594f57', '#444444'];
+
+        function createConfetti(x, y) {
+            const confettiCount = 100; // 彩带数量
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+                // 设置初始位置为中心
+                confetti.style.left = `${x}px`;
+                confetti.style.top = `${y}px`;
+
+                // 随机爆炸方向和范围
+                const randomAngle = Math.random() * 2 * Math.PI; // 随机角度
+                const randomRadius = Math.random() * (window.innerWidth / 2); // 随机半径范围
+                const xOffset = Math.cos(randomAngle) * randomRadius; // X方向偏移
+                const yOffset = Math.sin(randomAngle) * randomRadius; // Y方向偏移
+
+                confetti.style.setProperty('--x', `${xOffset}px`);
+                confetti.style.setProperty('--y', `${yOffset}px`);
+
+                // 设置动画
+                confetti.style.animation = `explode ${Math.random() * 1 + 1.5}s ease-out`;
+
+                document.body.appendChild(confetti);
+
+                // 动画结束后移除
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
+            }
+        }
+
+        // 页面加载触发中心爆炸
+        window.addEventListener('load', () => {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            createConfetti(centerX, centerY); // 从中心向外爆炸
+        });
+    </script>
+</body>
+</html>
